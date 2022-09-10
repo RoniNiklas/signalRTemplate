@@ -1,0 +1,86 @@
+﻿@page "/"
+@using Client.Infra
+@using FluentValidation.Results
+@inject HttpClient Http
+
+<PageTitle>Weather forecast</PageTitle>
+
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from the server. Input 0 for a validation error and any integer > 0 for a weather result.</p>
+
+<input @bind="Id" />
+<button @onclick="FetchDataAsync">Fetch</button>
+
+@if (forecast == null && errors?.Count() == 0)
+{
+    <p><em>Loading...</em></p>
+}
+else if (errors?.Count > 0)
+{
+    <div>
+        <ul>
+            @foreach (var error in errors)
+            {
+                <li>@error.PropertyName: @error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+else if (forecast != null)
+{
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Temp. (C)</th>
+                    <th>Temp. (F)</th>
+                    <th>Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private WeatherForecastViewModel? forecast;
+    private List<ValidationFailure> errors = new();
+    private int Id { get; set; } = 1;
+
+    protected async Task FetchDataAsync()
+    {
+        var req = new GetSingleWeatherForecast(Id);
+        var valRes = req.Validate();
+        if (valRes.IsValid)
+        {
+            var res = await RPCClient.HandleAsync(new GetSingleWeatherForecast(Id));
+            res.Switch(
+                success => { forecast = success; errors = new(); },
+                error => { forecast = null; errors = error.Errors; }
+            );
+        }
+        else
+        {
+            errors = valRes.Errors;
+        }
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await RPCClient.HandleAsync(new GetSingleWeatherForecast(1));
+        res.Switch(
+            success => { forecast = success; },
+            error => { errors = error.Errors; }
+        );
+    }
+}
