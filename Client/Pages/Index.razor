@@ -58,29 +58,39 @@ else if (forecast != null)
     private int Id { get; set; } = 1;
     private WeatherHub WeatherHub;
 
-    protected async Task FetchDataAsync() => await WeatherHub.UserChangesWeather(Id);
+    protected async Task FetchDataAsync() => await WeatherHub.InvokeAsync(x => x.UserChangesWeather, Id);
 
     protected override async Task OnInitializedAsync()
     {
         WeatherHub = new WeatherHub(
             result => {
-                result.Switch(
-                    data =>
-                    {
-                        forecast = data;
-                        errors = new();
-                        InvokeAsync(StateHasChanged);
-                    },
-                    error =>
-                    {
-                        forecast = null;
-                        errors = error.Errors;
-                        InvokeAsync(StateHasChanged);
-                    }
-                );
+                if (result != null)
+                {
+                    result.Switch(
+                data =>
+                {
+                            forecast = data;
+                            errors = new();
+                            InvokeAsync(StateHasChanged);
+                        },
+                error =>
+                {
+                            forecast = null;
+                            errors = error.Errors;
+                            InvokeAsync(StateHasChanged);
+                        }
+            );
+                } else {
+                    forecast = null;
+                    errors = new();
+                    InvokeAsync(StateHasChanged);
+                }
             }
         );
-
+        WeatherHub.Register(x => x.WeatherHasChanged, result =>
+        {
+            Console.WriteLine(result);
+        });
         await WeatherHub.SyncState();
     }
 }

@@ -6,7 +6,7 @@ public interface IWeatherHub
 
 public interface IWeatherHubServerInvoked : IWeatherHub
 {
-    public Func<RequestResult<WeatherForecastViewModel>, Task> WeatherHasChanged { get; }
+    Task WeatherHasChanged(RequestResult<WeatherForecastViewModel> weather);
 }
 
 public interface IWeatherHubClientInvoked : IWeatherHub
