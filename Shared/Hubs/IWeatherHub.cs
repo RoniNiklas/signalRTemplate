@@ -1,15 +1,12 @@
 ﻿namespace Shared.Hubs;
-public interface IWeatherHub
+
+public interface IWeatherHubServerInvoked
 {
     public const string Path = "/weather";
-}
-
-public interface IWeatherHubServerInvoked : IWeatherHub
-{
     Task WeatherHasChanged(RequestResult<WeatherForecastViewModel> weather);
 }
 
-public interface IWeatherHubClientInvoked : IWeatherHub
+public interface IWeatherHubClientInvoked
 {
     Task SyncState();
     Task UserChangesWeather(int id);

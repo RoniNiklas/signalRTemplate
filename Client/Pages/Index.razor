@@ -11,7 +11,7 @@
 <p>This component demonstrates fetching data from the server. Input 0 for a validation error and any integer > 0 for a weather result.</p>
 
 <input @bind="Id" />
-<button @onclick="FetchDataAsync">Fetch</button>
+<button @onclick="ChangeWeatherAsync">Fetch</button>
 
 @if (forecast == null && errors?.Count() == 0)
 {
@@ -56,41 +56,30 @@ else if (forecast != null)
     private WeatherForecastViewModel? forecast;
     private List<ValidationFailure> errors = new();
     private int Id { get; set; } = 1;
-    private WeatherHub WeatherHub;
+    private WeatherHub WeatherHub = new WeatherHub();
 
-    protected async Task FetchDataAsync() => await WeatherHub.InvokeAsync(x => x.UserChangesWeather, Id);
+    protected async Task ChangeWeatherAsync() => await WeatherHub.InvokeAsync(x => x.UserChangesWeather, Id);
 
     protected override async Task OnInitializedAsync()
     {
-        WeatherHub = new WeatherHub(
-            result => {
-                if (result != null)
+        WeatherHub.Register(x => x.WeatherHasChanged, (RequestResult<WeatherForecastViewModel> result) =>
+        {
+            result.Switch(
+                success =>
                 {
-                    result.Switch(
-                data =>
-                {
-                            forecast = data;
-                            errors = new();
-                            InvokeAsync(StateHasChanged);
-                        },
-                error =>
-                {
-                            forecast = null;
-                            errors = error.Errors;
-                            InvokeAsync(StateHasChanged);
-                        }
-            );
-                } else {
-                    forecast = null;
+                    forecast = success;
                     errors = new();
                     InvokeAsync(StateHasChanged);
+                },
+                error =>
+                {
+                    forecast = null;
+                    errors = error.Errors;
+                    InvokeAsync(StateHasChanged);
                 }
-            }
-        );
-        WeatherHub.Register(x => x.WeatherHasChanged, result =>
-        {
-            Console.WriteLine(result);
+            );
+            return Task.CompletedTask;
         });
-        await WeatherHub.SyncState();
+        await WeatherHub.InvokeAsync(x => x.SyncState);
     }
 }

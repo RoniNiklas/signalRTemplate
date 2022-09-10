@@ -40,6 +40,7 @@ public record RequestResult<TResponse> : RequestResult
     }
 
     public static implicit operator RequestResult<TResponse>(TResponse t) => new(t);
+    public static implicit operator RequestResult<TResponse>(ValidationError error) => new(error);
 }
 
 public record RequestResult
