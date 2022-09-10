@@ -10,6 +10,9 @@
 		<Using Include="MediatR" />
 		<Using Include="Server.Infra" />
 		<Using Include="FluentValidation" />
+		<Using Include="Shared.DTOs" />
+		<Using Include="Shared.Requests" />
+		<Using Include="Shared.Hubs" />
 	</ItemGroup>
 
   <ItemGroup>

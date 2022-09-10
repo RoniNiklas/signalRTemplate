@@ -1,6 +1,7 @@
 using Handlers.WeatherForecast;
+using Microsoft.AspNetCore.ResponseCompression;
+using Server.Hubs;
 using Server.Infra.MediatR;
-using Shared.Requests;
 
 // SERVICES
 var builder = WebApplication.CreateBuilder(args);
@@ -28,18 +29,24 @@ builder.Services.AddCors(options =>
     });
 });
 
+// SIGNALR
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
+builder.Services.AddSignalR();
+
 // APP
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 app.UseHttpsRedirection();
+app.UseRouting();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
-app.InstallEndpoints(typeof(GetWeatherForecasts), typeof(GetWeatherForecastsQueryHandler));
-
-// just for benchmark comparison
-app.MapPost("WeatherForecasts", async (IMediator mediator, GetWeatherForecasts input) => await mediator.Send(input));
+app.MapHub<WeatherHub>(IWeatherHub.Path);
 
 app.Run();

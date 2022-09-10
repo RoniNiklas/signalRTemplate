@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Client.Hubs
 @using Client.Infra
 @using FluentValidation.Results
 @inject HttpClient Http
@@ -55,32 +56,32 @@ else if (forecast != null)
     private WeatherForecastViewModel? forecast;
     private List<ValidationFailure> errors = new();
     private int Id { get; set; } = 1;
+    private WeatherHub WeatherHub;
 
-    protected async Task FetchDataAsync()
-    {
-        var req = new GetSingleWeatherForecast(Id);
-        var valRes = req.Validate();
-        if (valRes.IsValid)
-        {
-            var res = await RPCClient.HandleAsync(new GetSingleWeatherForecast(Id));
-            res.Switch(
-                success => { forecast = success; errors = new(); },
-                error => { forecast = null; errors = error.Errors; }
-            );
-        }
-        else
-        {
-            errors = valRes.Errors;
-        }
-        StateHasChanged();
-    }
+    protected async Task FetchDataAsync() => await WeatherHub.UserChangesWeather(Id);
 
     protected override async Task OnInitializedAsync()
     {
-        var res = await RPCClient.HandleAsync(new GetSingleWeatherForecast(1));
-        res.Switch(
-            success => { forecast = success; },
-            error => { errors = error.Errors; }
+        WeatherHub = new WeatherHub(
+            result => {
+                result.Switch(
+                    data =>
+                    {
+                        forecast = data;
+                        errors = new();
+                        InvokeAsync(StateHasChanged);
+                    },
+                    error =>
+                    {
+                        forecast = null;
+                        errors = error.Errors;
+                        InvokeAsync(StateHasChanged);
+
+                    }
+                );
+            }
         );
+
+        WeatherHub.SyncState();
     }
 }
