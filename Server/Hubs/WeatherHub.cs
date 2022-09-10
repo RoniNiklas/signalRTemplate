@@ -2,7 +2,7 @@
 
 namespace Server.Hubs;
 
-public class WeatherHub : Hub, IWeatherHub
+public class WeatherHub : Hub<IWeatherHubServerInvoked>, IWeatherHubClientInvoked
 {
     private readonly IMediator Mediator;
     public WeatherHub(IMediator mediator) : base()
@@ -12,21 +12,13 @@ public class WeatherHub : Hub, IWeatherHub
 
     public async Task SyncState()
     {
-        await Clients.Caller.SendAsync(nameof(WeatherHasChanged), WeatherHubState.CurrentState);
+        await Clients.Caller.WeatherHasChanged(WeatherHubState.CurrentState);
     }
 
     public async Task UserChangesWeather(int id)
     {
         WeatherHubState.CurrentState = await Mediator.Send(new GetSingleWeatherForecast(id));
-        await WeatherHasChanged(WeatherHubState.CurrentState);
-    }
-
-    public async Task WeatherHasChanged(RequestResult<WeatherForecastViewModel> weather)
-    {
-        await Clients.All.SendAsync(
-            nameof(WeatherHasChanged),
-            weather
-        );
+        await Clients.All.WeatherHasChanged(WeatherHubState.CurrentState);
     }
 }
 

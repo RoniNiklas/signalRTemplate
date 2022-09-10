@@ -76,12 +76,11 @@ else if (forecast != null)
                         forecast = null;
                         errors = error.Errors;
                         InvokeAsync(StateHasChanged);
-
                     }
                 );
             }
         );
 
-        WeatherHub.SyncState();
+        await WeatherHub.SyncState();
     }
 }
